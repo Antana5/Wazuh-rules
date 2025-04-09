@@ -206,7 +206,7 @@ clone_rules() {
     rule_dirs=(
     "Exclusion Rules"
     "Healthcheck"
-    "lsaas_dump_100430-100443"  # This is the correct directory name
+    "Lsass Dump"  # This is the correct directory name
     "PEAKLIGHT_100601-100611"   # This is the correct directory name
     "powershell_100201-100206"  # This is the correct directory name
     "SOCFortress"
