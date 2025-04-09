@@ -196,81 +196,58 @@ clone_rules() {
     mkdir -p /var/ossec/etc/decoders
     mkdir -p /var/ossec/etc/shared/default
     
-    # Clean the rules directory before installation
+    # Clean existing rules directory
+    logger "Cleaning existing rules directory..."
     rm -f /var/ossec/etc/rules/*.xml
     
-    # Clone the repository
-    logger "Cloning repository..."
-    if ! git clone https://github.com/Antana5/Wazuh-rules.git /tmp/Wazuh-Rules; then
-        logger -e "Failed to clone repository"
+    # Clone and install new rules
+    logger "Cloning SOCFortress rules repository..."
+    if ! git clone https://github.com/socfortress/Wazuh-Rules.git /tmp/Wazuh-Rules; then
+        logger -e "Failed to clone SOCFortress rules repository"
         return 1
     fi
     
-    cd /tmp/Wazuh-Rules/Wazuh-Rules-main || {
-        logger -e "Failed to find Wazuh-Rules-main directory"
-        return 1
-    }
+    # Create a staging directory for files
+    mkdir -p /tmp/wazuh_rules_staging
     
-    # Create a directory to organize all XML files
-    mkdir -p /tmp/organized_rules
-    
-    # Process directories in the repository
-    logger "Organizing rules from repository..."
-    mapfile -t actual_dirs < <(find . -maxdepth 1 -type d | grep -v "^\.$" | sort)
-    
-    # Copy files from specific directories first
-    # This ensures directory-specific rules take precedence
-    for dir in "${actual_dirs[@]}"; do
-        dir_name="${dir#./}"
-        if [[ -n "$dir_name" ]]; then
-            logger "Processing directory: $dir_name"
-            
-            # Find and copy XML files to the organized directory
-            find "$dir" -name "*.xml" -exec cp {} /tmp/organized_rules/ \;
-            
-            # Check for agent.conf
-            if [[ -f "$dir/agent.conf" ]]; then
-                logger "  Found agent.conf in $dir_name - copying to shared/default"
-                cp "$dir/agent.conf" /var/ossec/etc/shared/default/
+    # Find all XML files in the repository, excluding certain patterns
+    logger "Finding and organizing rule files..."
+    find /tmp/Wazuh-Rules -name "*.xml" | sort | while read -r file; do
+        # Extract base filename
+        filename=$(basename "$file")
+        
+        # Check if this is a decoder file that should go to decoders directory
+        is_decoder=false
+        for decoder in "decoder-linux-sysmon.xml" "yara_decoders.xml" "auditd_decoders.xml" "naxsi-opnsense_decoders.xml" "maltrail_decoders.xml" "decoder-manager-logs.xml"; do
+            if [[ "$filename" == "$decoder" ]]; then
+                is_decoder=true
+                break
             fi
+        done
+        
+        if [[ "$is_decoder" == true ]]; then
+            logger "Found decoder file: $filename"
+            cp "$file" /var/ossec/etc/decoders/
+        else
+            # Copy to staging area, overwrite if exists (prioritize later files)
+            logger "Found rule file: $filename"
+            cp "$file" /tmp/wazuh_rules_staging/
         fi
     done
     
-    # Skip files in the root that have the same name as directory files
-    # This prevents duplicate rule IDs from root files
-    logger "Checking for unique root XML files..."
-    while IFS= read -r xml_file; do
-        file_basename=$(basename "$xml_file")
-        if [[ ! -f "/tmp/organized_rules/$file_basename" ]]; then
-            logger "  Copying unique root file: $file_basename"
-            cp "$xml_file" /tmp/organized_rules/
-        else
-            logger "  Skipping duplicate root file: $file_basename (already exists in a directory)"
-        fi
-    done < <(find . -maxdepth 1 -name "*.xml")
+    # Now copy all staged files to the rules directory
+    logger "Copying organized rules to Wazuh..."
+    cp /tmp/wazuh_rules_staging/*.xml /var/ossec/etc/rules/ 2>/dev/null || true
     
-    # Copy all organized files to the rules directory
-    logger "Installing all organized rules..."
-    cp /tmp/organized_rules/*.xml /var/ossec/etc/rules/ 2>/dev/null || true
-    
-    # Count installed rules
-    rule_count=$(ls -1 /var/ossec/etc/rules/*.xml 2>/dev/null | wc -l)
-    if [[ $rule_count -eq 0 ]]; then
-        logger -e "No rules were copied! This may indicate an issue with the repository structure."
-        restore_backup
-        return 1
-    else
-        logger "Successfully installed $rule_count rule files"
-    fi
-    
-    # Move decoders to appropriate directory
-    move_decoders
-    
-    # Save version info
-    /var/ossec/bin/wazuh-control info 2>&1 | tee /tmp/version.txt
+    # Check for agent.conf files
+    logger "Checking for agent configuration files..."
+    find /tmp/Wazuh-Rules -name "agent.conf" | while read -r agent_conf; do
+        logger "Found agent.conf - copying to shared/default"
+        cp "$agent_conf" /var/ossec/etc/shared/default/
+    done
     
     # Set permissions
-    logger "Setting ownership and permissions..."
+    logger "Setting file permissions..."
     chown -R wazuh:wazuh /var/ossec/etc/rules/* 2>/dev/null || true
     chmod -R 660 /var/ossec/etc/rules/* 2>/dev/null || true
     
@@ -279,8 +256,12 @@ clone_rules() {
         chmod 660 /var/ossec/etc/shared/default/agent.conf 2>/dev/null || true
     fi
     
-    # Clean up
-    rm -rf /tmp/organized_rules
+    # Cleanup
+    rm -rf /tmp/wazuh_rules_staging
+    
+    # List installed rules
+    logger "Installed rules:"
+    ls -la /var/ossec/etc/rules/
     
     # Restart service
     logger "Rules downloaded, attempting to restart the Wazuh-Manager service"
@@ -308,7 +289,7 @@ main() {
     # Confirmation prompt unless skipped
     if [[ "$SKIP_CONFIRMATION" != "true" ]]; then
         while true; do
-            read -p "Do you wish to configure Wazuh with the SOCFortress FORK ruleset? WARNING - This script will replace all of your current custom Wazuh Rules. Please proceed with caution and it is recommended to manually back up your rules... continue? (y/n) " yn
+            read -p "Do you wish to configure Wazuh with the SOCFortress ruleset? WARNING - This script will replace all of your current custom Wazuh Rules. Please proceed with caution and it is recommended to manually back up your rules... continue? (y/n) " yn
             case $yn in
                 [Yy]* ) break;;
                 [Nn]* ) exit;;
