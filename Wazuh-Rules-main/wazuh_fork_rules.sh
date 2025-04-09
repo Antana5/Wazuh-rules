@@ -206,9 +206,9 @@ clone_rules() {
     rule_dirs=(
         "Exclusion Rules"
         "Healthcheck"
-        "lsaas_dump_100430-100443"  # Updated folder name
-        "PEAKLIGHT_100601-100611"
-        "powershell_100201-100206"
+        "Lsass Dump" 
+        "PEAKLIGHT"
+        "Windows Powershell V2"
         "SOCFortress"
         "Software"
         "Sysmon New Events"
@@ -216,6 +216,7 @@ clone_rules() {
         "Windows Autoruns"
         "Windows Logon Sessions"
         "Windows Powershell"
+        "Windows Defender"  
         "Windows_Sysmon"
     )
     
