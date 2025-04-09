@@ -196,7 +196,10 @@ clone_rules() {
     mkdir -p /var/ossec/etc/decoders
     mkdir -p /var/ossec/etc/shared/default
     
-    # Clone and install new rules
+    # Clean the rules directory before installation
+    rm -f /var/ossec/etc/rules/*.xml
+    
+    # Clone the repository
     logger "Cloning repository..."
     if ! git clone https://github.com/Antana5/Wazuh-rules.git /tmp/Wazuh-Rules; then
         logger -e "Failed to clone repository"
@@ -208,33 +211,22 @@ clone_rules() {
         return 1
     }
     
-    # Install rule files from the directory structure
-    logger "Installing rules from structured directories..."
+    # Create a directory to organize all XML files
+    mkdir -p /tmp/organized_rules
     
-    # Get the actual directory list from the repository
-    logger "Finding rule directories..."
+    # Process directories in the repository
+    logger "Organizing rules from repository..."
     mapfile -t actual_dirs < <(find . -maxdepth 1 -type d | grep -v "^\.$" | sort)
     
-    # Display found directories
-    logger "Found these directories in the repository:"
-    for dir in "${actual_dirs[@]}"; do
-        logger "  - ${dir#./}"
-    done
-    
-    # Process each directory found
+    # Copy files from specific directories first
+    # This ensures directory-specific rules take precedence
     for dir in "${actual_dirs[@]}"; do
         dir_name="${dir#./}"
         if [[ -n "$dir_name" ]]; then
             logger "Processing directory: $dir_name"
             
-            # Find and copy XML files
-            xml_files=$(find "$dir" -name "*.xml" 2>/dev/null)
-            if [[ -n "$xml_files" ]]; then
-                logger "  Copying XML files from $dir_name"
-                find "$dir" -name "*.xml" -exec cp {} /var/ossec/etc/rules/ \;
-            else
-                logger "  No XML files found in $dir_name"
-            fi
+            # Find and copy XML files to the organized directory
+            find "$dir" -name "*.xml" -exec cp {} /tmp/organized_rules/ \;
             
             # Check for agent.conf
             if [[ -f "$dir/agent.conf" ]]; then
@@ -244,14 +236,31 @@ clone_rules() {
         fi
     done
     
-    # Also check for any XML files in the root directory
-    logger "Checking for XML files in the root directory..."
-    xml_files_root=$(find . -maxdepth 1 -name "*.xml" 2>/dev/null)
-    if [[ -n "$xml_files_root" ]]; then
-        logger "Copying XML files from root directory"
-        find . -maxdepth 1 -name "*.xml" -exec cp {} /var/ossec/etc/rules/ \;
+    # Skip files in the root that have the same name as directory files
+    # This prevents duplicate rule IDs from root files
+    logger "Checking for unique root XML files..."
+    while IFS= read -r xml_file; do
+        file_basename=$(basename "$xml_file")
+        if [[ ! -f "/tmp/organized_rules/$file_basename" ]]; then
+            logger "  Copying unique root file: $file_basename"
+            cp "$xml_file" /tmp/organized_rules/
+        else
+            logger "  Skipping duplicate root file: $file_basename (already exists in a directory)"
+        fi
+    done < <(find . -maxdepth 1 -name "*.xml")
+    
+    # Copy all organized files to the rules directory
+    logger "Installing all organized rules..."
+    cp /tmp/organized_rules/*.xml /var/ossec/etc/rules/ 2>/dev/null || true
+    
+    # Count installed rules
+    rule_count=$(ls -1 /var/ossec/etc/rules/*.xml 2>/dev/null | wc -l)
+    if [[ $rule_count -eq 0 ]]; then
+        logger -e "No rules were copied! This may indicate an issue with the repository structure."
+        restore_backup
+        return 1
     else
-        logger "No XML files found in root directory"
+        logger "Successfully installed $rule_count rule files"
     fi
     
     # Move decoders to appropriate directory
@@ -269,6 +278,9 @@ clone_rules() {
         chown wazuh:wazuh /var/ossec/etc/shared/default/agent.conf 2>/dev/null || true
         chmod 660 /var/ossec/etc/shared/default/agent.conf 2>/dev/null || true
     fi
+    
+    # Clean up
+    rm -rf /tmp/organized_rules
     
     # Restart service
     logger "Rules downloaded, attempting to restart the Wazuh-Manager service"
