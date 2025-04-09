@@ -1,0 +1,158 @@
+<group name="windows,lsass_dump_detection,credential_theft">
+
+<!-- Base rule for LSASS dump detection by name pattern -->
+<rule id="100430" level="12">
+  <if_group>sysmon_event_11</if_group>
+  <field name="win.eventdata.targetFilename" type="pcre2">(?i)\\(lsass|lsa|security).*\.(dmp|mdmp|hdmp|bin|dump)$</field>
+  <description>Potential LSASS dump file created: $(win.eventdata.targetFilename)</description>
+  <mitre>
+    <id>T1003.001</id>
+  </mitre>
+  <group>attack,credential_access,lsass_dump,file_monitoring,mitre_credential_access,pci_dss_10.6.1,gdpr_IV_35.7.d,hipaa_164.312.b,nist_800_53_AU.6</group>
+</rule>
+
+<!-- PowerShell creating LSASS dump file -->
+<rule id="100431" level="14">
+  <if_sid>100430</if_sid>
+  <field name="win.eventdata.image" type="pcre2">(?i)\\(powershell|pwsh)\.exe$</field>
+  <description>PowerShell creating LSASS dump file: $(win.eventdata.targetFilename)</description>
+  <mitre>
+    <id>T1003.001</id>
+  </mitre>
+  <group>attack,credential_access,lsass_dump,powershell,suspicious_script,mitre_credential_access,pci_dss_10.6.1,gdpr_IV_35.7.d,hipaa_164.312.b,nist_800_53_AU.6</group>
+</rule>
+
+<!-- Command Prompt creating LSASS dump file -->
+<rule id="100432" level="14">
+  <if_sid>100430</if_sid>
+  <field name="win.eventdata.image" type="pcre2">(?i)\\cmd\.exe$</field>
+  <description>Command Prompt creating LSASS dump file: $(win.eventdata.targetFilename)</description>
+  <mitre>
+    <id>T1003.001</id>
+  </mitre>
+  <group>attack,credential_access,lsass_dump,command_prompt,mitre_credential_access,pci_dss_10.6.1,gdpr_IV_35.7.d,hipaa_164.312.b,nist_800_53_AU.6</group>
+</rule>
+
+<!-- WerFault creating LSASS dump file - common legitimate case but worth monitoring -->
+<rule id="100433" level="10">
+  <if_sid>100430</if_sid>
+  <field name="win.eventdata.image" type="pcre2">(?i)\\werfault\.exe$</field>
+  <description>WerFault creating LSASS dump file - possibly legitimate: $(win.eventdata.targetFilename)</description>
+  <mitre>
+    <id>T1003.001</id>
+  </mitre>
+  <group>attack,credential_access,lsass_dump,potentially_legitimate,mitre_credential_access,pci_dss_10.6.1,gdpr_IV_35.7.d,hipaa_164.312.b,nist_800_53_AU.6</group>
+</rule>
+
+<!-- Common hacking tools creating dump files -->
+<rule id="100434" level="15">
+  <if_sid>100430</if_sid>
+  <field name="win.eventdata.image" type="pcre2">(?i)\\(procdump|processhacker|windbg|x64dbg|ollydbg|taskexp|dumper|mimikatz|gsecdump|wce|pwdump|fgdump|lazagne)\.exe$</field>
+  <description>Known credential dumping tool creating LSASS dump: $(win.eventdata.image)</description>
+  <mitre>
+    <id>T1003.001</id>
+  </mitre>
+  <group>attack,credential_access,lsass_dump,hacking_tool,malicious_tool,mitre_credential_access,pci_dss_10.6.1,gdpr_IV_35.7.d,hipaa_164.312.b,nist_800_53_AU.6</group>
+</rule>
+
+<!-- RunDLL32 creating LSASS dump file - often used for living-off-the-land attacks -->
+<rule id="100435" level="14">
+  <if_sid>100430</if_sid>
+  <field name="win.eventdata.image" type="pcre2">(?i)\\rundll32\.exe$</field>
+  <description>RunDLL32 creating LSASS dump file: $(win.eventdata.targetFilename)</description>
+  <mitre>
+    <id>T1003.001</id>
+  </mitre>
+  <group>attack,credential_access,lsass_dump,living_off_the_land,lotl,mitre_credential_access,pci_dss_10.6.1,gdpr_IV_35.7.d,hipaa_164.312.b,nist_800_53_AU.6</group>
+</rule>
+
+<!-- Script engines creating LSASS dump file -->
+<rule id="100436" level="14">
+  <if_sid>100430</if_sid>
+  <field name="win.eventdata.image" type="pcre2">(?i)\\(cscript|wscript|mshta|bitsadmin)\.exe$</field>
+  <description>Script engine creating LSASS dump file: $(win.eventdata.image)</description>
+  <mitre>
+    <id>T1003.001</id>
+  </mitre>
+  <group>attack,credential_access,lsass_dump,script_engine,mitre_credential_access,pci_dss_10.6.1,gdpr_IV_35.7.d,hipaa_164.312.b,nist_800_53_AU.6</group>
+</rule>
+
+<!-- WMIC creating LSASS dump file -->
+<rule id="100437" level="14">
+  <if_sid>100430</if_sid>
+  <field name="win.eventdata.image" type="pcre2">(?i)\\wmic\.exe$</field>
+  <description>WMIC creating LSASS dump file: $(win.eventdata.targetFilename)</description>
+  <mitre>
+    <id>T1003.001</id>
+  </mitre>
+  <group>attack,credential_access,lsass_dump,wmic,mitre_credential_access,pci_dss_10.6.1,gdpr_IV_35.7.d,hipaa_164.312.b,nist_800_53_AU.6</group>
+</rule>
+
+<!-- .NET execution creating LSASS dump file -->
+<rule id="100438" level="14">
+  <if_sid>100430</if_sid>
+  <field name="win.eventdata.image" type="pcre2">(?i)\\(dotnet|installutil|regasm|regsvcs)\.exe$</field>
+  <description>.NET tool creating LSASS dump file: $(win.eventdata.image)</description>
+  <mitre>
+    <id>T1003.001</id>
+  </mitre>
+  <group>attack,credential_access,lsass_dump,dotnet,mitre_credential_access,pci_dss_10.6.1,gdpr_IV_35.7.d,hipaa_164.312.b,nist_800_53_AU.6</group>
+</rule>
+
+<!-- Browser creating LSASS dump file (unusual) -->
+<rule id="100439" level="14">
+  <if_sid>100430</if_sid>
+  <field name="win.eventdata.image" type="pcre2">(?i)\\(chrome|firefox|iexplore|msedge)\.exe$</field>
+  <description>Web browser creating LSASS dump file (highly suspicious): $(win.eventdata.image)</description>
+  <mitre>
+    <id>T1003.001</id>
+  </mitre>
+  <group>attack,credential_access,lsass_dump,browser,unusual_source,mitre_credential_access,pci_dss_10.6.1,gdpr_IV_35.7.d,hipaa_164.312.b,nist_800_53_AU.6</group>
+</rule>
+
+<!-- System utilities creating LSASS dump file (potentially suspicious) -->
+<rule id="100440" level="12">
+  <if_sid>100430</if_sid>
+  <field name="win.eventdata.image" type="pcre2">(?i)\\(msbuild|certutil|makecab|expand|extrac32|forfiles)\.exe$</field>
+  <description>System utility creating LSASS dump file: $(win.eventdata.image)</description>
+  <mitre>
+    <id>T1003.001</id>
+  </mitre>
+  <group>attack,credential_access,lsass_dump,system_utility,living_off_the_land,mitre_credential_access,pci_dss_10.6.1,gdpr_IV_35.7.d,hipaa_164.312.b,nist_800_53_AU.6</group>
+</rule>
+
+<!-- Suspicious locations for dump files -->
+<rule id="100441" level="14">
+  <if_sid>100430</if_sid>
+  <field name="win.eventdata.targetFilename" type="pcre2">(?i)\\(temp|tmp|downloads|desktop|documents|public|programdata|appdata|recycler)\\.*\.(dmp|bin)$</field>
+  <description>LSASS dump file created in suspicious location: $(win.eventdata.targetFilename)</description>
+  <mitre>
+    <id>T1003.001</id>
+  </mitre>
+  <group>attack,credential_access,lsass_dump,suspicious_location,mitre_credential_access,pci_dss_10.6.1,gdpr_IV_35.7.d,hipaa_164.312.b,nist_800_53_AU.6</group>
+</rule>
+
+<!-- Pattern for lsass dump that doesn't have lsass in name (evasion technique) -->
+<rule id="100442" level="12">
+  <if_group>sysmon_event_11</if_group>
+  <field name="win.eventdata.targetFilename" type="pcre2">(?i)\.(dmp|mdmp|hdmp)$</field>
+  <field name="win.eventdata.image" type="pcre2">(?i)\\(powershell|pwsh|cmd|rundll32|wmic|msbuild|cscript|wscript)\.exe$</field>
+  <description>Potential LSASS dump with obfuscated name: $(win.eventdata.targetFilename)</description>
+  <mitre>
+    <id>T1003.001</id>
+  </mitre>
+  <group>attack,credential_access,lsass_dump,evasion,obfuscation,mitre_credential_access,pci_dss_10.6.1,gdpr_IV_35.7.d,hipaa_164.312.b,nist_800_53_AU.6</group>
+</rule>
+
+<!-- Memory dump file with typical minidump size range -->
+<rule id="100443" level="12">
+  <if_group>sysmon_event_11</if_group>
+  <field name="win.eventdata.targetFilename" type="pcre2">(?i)\.(dmp|mdmp|hdmp|bin)$</field>
+  <description>Memory dump file created (possible LSASS dump): $(win.eventdata.targetFilename)</description>
+  <mitre>
+    <id>T1003.001</id>
+  </mitre>
+  <group>attack,credential_access,memory_dump,potential_lsass_dump,mitre_credential_access,pci_dss_10.6.1,gdpr_IV_35.7.d,hipaa_164.312.b,nist_800_53_AU.6</group>
+</rule>
+
+</group>
