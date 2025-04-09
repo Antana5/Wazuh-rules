@@ -204,21 +204,21 @@ clone_rules() {
     
     # List of rule directories
     rule_dirs=(
-        "Exclusion Rules"
-        "Healthcheck"
-        "Lsass Dump" 
-        "PEAKLIGHT"
-        "Windows Powershell V2"
-        "SOCFortress"
-        "Software"
-        "Sysmon New Events"
-        "Wazuh Inventory"
-        "Windows Autoruns"
-        "Windows Logon Sessions"
-        "Windows Powershell"
-        "Windows Defender"  
-        "Windows_Sysmon"
-    )
+    "Exclusion Rules"
+    "Healthcheck"
+    "lsaas_dump_100430-100443"  # This is the correct directory name
+    "PEAKLIGHT_100601-100611"   # This is the correct directory name
+    "powershell_100201-100206"  # This is the correct directory name
+    "SOCFortress"
+    "Software"
+    "Sysmon New Events"
+    "Wazuh Inventory"
+    "Windows Autoruns"
+    "Windows Logon Sessions"
+    "Windows Powershell"
+    "Windows_defender_tampering_110003-110008"  # This is the correct directory name
+    "Windows_Sysmon"
+)
     
     # Process each rule directory
     for dir in "${rule_dirs[@]}"; do
