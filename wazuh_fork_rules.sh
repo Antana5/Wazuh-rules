@@ -193,7 +193,7 @@ clone_rules() {
     
     # Clone and install new rules
     if ! git clone https://github.com/Antana5/Wazuh-Rules.git /tmp/Wazuh-Rules; then
-        logger -e "Failed to clone SOCFortress rules repository"
+        logger -e "Failed to clone  rules repository"
         return 1
     fi
     
@@ -236,7 +236,7 @@ main() {
     # Confirmation prompt unless skipped
     if [[ "$SKIP_CONFIRMATION" != "true" ]]; then
         while true; do
-            read -p "Do you wish to configure Wazuh with the SOCFortress ruleset? WARNING - This script will replace all of your current custom Wazuh Rules. Please proceed with caution and it is recommended to manually back up your rules... continue? (y/n) " yn
+            read -p "Do you wish to configure Wazuh with the  ruleset? WARNING - This script will replace all of your current custom Wazuh Rules. Please proceed with caution and it is recommended to manually back up your rules... continue? (y/n) " yn
             case $yn in
                 [Yy]* ) break;;
                 [Nn]* ) exit;;
