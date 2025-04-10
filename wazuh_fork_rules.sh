@@ -212,7 +212,6 @@ clone_rules() {
     
     # Restart service
     logger "Rules downloaded, attempting to restart the Wazuh-Manager service"
-    if ! restart_service "wazuh-manager"; then
         restore_backup
         return 1
     fi
