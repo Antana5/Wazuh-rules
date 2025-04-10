@@ -1,5 +1,4 @@
 <group name="windows,powershell,">
-
   <rule id="100201" level="8">
     <if_sid>60009</if_sid>
     <field name="win.eventdata.payload" type="pcre2">(?i)CommandInvocation</field>
@@ -10,7 +9,6 @@
       <id>T1562.001</id>
     </mitre>
   </rule>
-
   <rule id="100202" level="4">
     <if_sid>60009</if_sid>
     <field name="win.system.message" type="pcre2">(?i)blocked by your antivirus software</field>
@@ -19,17 +17,15 @@
       <id>T1059.001</id>
     </mitre>
   </rule>
-
   <rule id="100203" level="10">
     <if_sid>60009</if_sid>
     <field name="win.eventdata.payload" type="pcre2">(?i)CommandInvocation</field>
-    <field name="win.system.message" type="pcre2">(?i)Add-Persistence|Find-AVSignature|Get-GPPAutologon|Get-GPPPassword|Get-HttpStatus|Get-Keystrokes|Get-SecurityPackages|Get-TimedScreenshot|Get-VaultCredential|Get-VolumeShadowCopy|Install-SSP|Invoke-CredentialInjection|Invoke-DllInjection|Invoke-Mimikatz|Invoke-NinjaCopy|Invok>
+    <field name="win.system.message" type="pcre2">(?i)Add-Persistence|Find-AVSignature|Get-GPPAutologon|Get-GPPPassword|Get-HttpStatus|Get-Keystrokes|Get-SecurityPackages|Get-TimedScreenshot|Get-VaultCredential|Get-VolumeShadowCopy|Install-SSP|Invoke-CredentialInjection|Invoke-DllInjection|Invoke-Mimikatz|Invoke-NinjaCopy|Invoke-Shellcode</field>
     <description>Risky CMDLet executed. Possible malicious activity detected.</description>
     <mitre>
       <id>T1059.001</id>
     </mitre>
   </rule>
-
   <rule id="100204" level="8">
     <if_sid>91802</if_sid>
     <field name="win.eventdata.scriptBlockText" type="pcre2">(?i)mshta.*GetObject|mshta.*new ActiveXObject</field>
@@ -38,7 +34,6 @@
       <id>T1059.001</id>
     </mitre>
   </rule>
-
   <rule id="100205" level="5">
     <if_sid>60009</if_sid>
     <field name="win.eventdata.contextInfo" type="pcre2">(?i)ExecutionPolicy bypass|exec bypass</field>
@@ -47,7 +42,6 @@
       <id>T1059.001</id>
     </mitre>
   </rule>
-
   <rule id="100206" level="5">
     <if_sid>60009</if_sid>
     <field name="win.eventdata.contextInfo" type="pcre2">(?i)Invoke-WebRequest|IWR.*-url|IWR.*-InFile</field>
