@@ -192,7 +192,7 @@ clone_rules() {
     \cp -r /var/ossec/etc/rules/* /tmp/wazuh_rules_backup/
     
     # Clone and install new rules
-    if ! git clone https://github.com/Antana5/Wazuh-Rules.git /tmp/Wazuh-Rules; then
+    if ! git clone https://github.com/Antana5/Wazuh-rules.git /tmp/Wazuh-Rules; then
         logger -e "Failed to clone SOCFortress rules repository"
         return 1
     fi
@@ -212,6 +212,7 @@ clone_rules() {
     
     # Restart service
     logger "Rules downloaded, attempting to restart the Wazuh-Manager service"
+    if ! restart_service "wazuh-manager"; then
         restore_backup
         return 1
     fi
