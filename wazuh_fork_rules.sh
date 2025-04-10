@@ -8,7 +8,7 @@ DEBUG=false
 # Function to print usage information
 usage() {
     echo "Usage: $0 [OPTIONS]"
-    echo "Configure Wazuh with custom rules from your repository"
+    echo "Configure Wazuh with SOCFortress ruleset"
     echo ""
     echo "Options:"
     echo "  -y, --yes         Skip confirmation prompt"
@@ -43,8 +43,7 @@ done
 
 # Logger function for consistent output formatting
 logger() {
-    local now
-    now=$(date +'%m/%d/%Y %H:%M:%S')
+    local now=$(date +'%m/%d/%Y %H:%M:%S')
     local mtype="INFO:"
     local message="$1"
     
@@ -76,7 +75,7 @@ detect_package_manager() {
 # Check for required dependencies
 check_dependencies() {
     if ! command -v git &>/dev/null; then
-        logger -e "git package could not be found. Please install with $SYS_TYPE install git."
+        logger -e "git package could not be found. Please install with $(SYS_TYPE) install git."
         exit 1
     fi
     logger "Git package found. Continuing..."
@@ -141,7 +140,8 @@ health_check() {
         logger -e "Wazuh-Manager Service is not healthy. Please check /var/ossec/logs/ossec.log for details."
         return 1
     else
-        logger "Wazuh-Manager Service is healthy."
+        logger "Wazuh-Manager Service is healthy. Thanks for checking us out :)"
+        logger "Get started with our free-for-life tier here: https://www.socfortress.co/trial.html Happy Defending!"
         rm -rf /tmp/Wazuh-Rules
         return 0
     fi
@@ -166,7 +166,7 @@ move_decoders() {
     done
 }
 
-# Clone and install custom rules
+# Clone and install SOCFortress rules
 clone_rules() {
     logger "Beginning the installation process"
     
@@ -191,9 +191,9 @@ clone_rules() {
     logger "Backing up current rules into /tmp/wazuh_rules_backup/"
     \cp -r /var/ossec/etc/rules/* /tmp/wazuh_rules_backup/
     
-    # Clone and install new rules from the custom repository
-    if ! git clone https://github.com/Antana5/Wazuh-rules.git /tmp/Wazuh-Rules; then
-        logger -e "Failed to clone custom rules repository"
+    # Clone and install new rules
+    if ! git clone https://github.com/socfortress/Wazuh-Rules.git /tmp/Wazuh-Rules; then
+        logger -e "Failed to clone SOCFortress rules repository"
         return 1
     fi
     
@@ -236,7 +236,7 @@ main() {
     # Confirmation prompt unless skipped
     if [[ "$SKIP_CONFIRMATION" != "true" ]]; then
         while true; do
-            read -rp "Do you wish to configure Wazuh with the custom ruleset? WARNING - This script will replace all of your current custom Wazuh Rules. Please ensure you have backed up your rules... continue? (y/n) " yn
+            read -p "Do you wish to configure Wazuh with the SOCFortress ruleset? WARNING - This script will replace all of your current custom Wazuh Rules. Please proceed with caution and it is recommended to manually back up your rules... continue? (y/n) " yn
             case $yn in
                 [Yy]* ) break;;
                 [Nn]* ) exit;;
