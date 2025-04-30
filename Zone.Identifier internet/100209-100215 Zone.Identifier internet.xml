@@ -1,0 +1,55 @@
+<group name="sysmon,windows,downloaded_files,">
+  <!--
+    Silent collector rule (level 1 with no_log) to match Zone.Identifier files
+    This rule never alerts but can be referenced by if_matched_sid
+  -->
+  <rule id="100209" level="1">
+    <if_sid>61617</if_sid>
+    <field name="win.eventdata.targetFilename" type="pcre2">:Zone\.Identifier$</field>
+    <description>Zone.Identifier file detected (silent)</description>
+    <options>no_log</options>
+  </rule>
+
+  <!-- 
+    Main alert rule that only triggers on the third instance (final stage) of a download
+    Requires 3 matches of rule 100209 within 30 seconds before alerting
+    Uses same_field to ensure we're tracking each file separately
+  -->
+  <rule id="100210" level="3" frequency="3" timeframe="30">
+    <if_matched_sid>100209</if_matched_sid>
+    <same_field>win.eventdata.targetFilename</same_field>
+    <description>File downloaded from the internet: $(win.eventdata.targetFilename)</description>
+    <group>sysmon_event_15,file_download,</group>
+  </rule>
+
+  <!-- Higher severity for executable downloads -->
+  <rule id="100212" level="15">
+    <if_sid>100210</if_sid>
+    <field name="win.eventdata.targetFilename" type="pcre2">\.exe:Zone\.Identifier$</field>
+    <description>Executable file downloaded from the internet: $(win.eventdata.targetFilename)</description>
+    <group>executable_download,</group>
+  </rule>
+  
+  <!-- Higher severity for script downloads (bat, ps1, vbs, js) -->
+  <rule id="100213" level="15">
+    <if_sid>100210</if_sid>
+    <field name="win.eventdata.targetFilename" type="pcre2">\.(bat|ps1|vbs|js|cmd|hta):Zone\.Identifier$</field>
+    <description>Script file downloaded from the internet: $(win.eventdata.targetFilename)</description>
+    <group>script_download,</group>
+  </rule>
+
+  <!-- Higher severity for document downloads (.pdf, .docx, etc.) -->
+  <rule id="100214" level="12">
+    <if_sid>100210</if_sid>
+    <field name="win.eventdata.targetFilename" type="pcre2">\.(pdf|docx?|xlsx?|pptx?|csv|rtf|txt):Zone\.Identifier$</field>
+    <description>Document file downloaded from the internet: $(win.eventdata.targetFilename)</description>
+    <group>document_download,</group>
+  </rule>
+  
+  <!-- Alert on high number of downloads in a short period -->
+  <rule id="100215" level="10" frequency="5" timeframe="60">
+    <if_matched_sid>100210</if_matched_sid>
+    <description>Multiple files downloaded from the internet in a short time</description>
+    <group>multiple_downloads,</group>
+  </rule>
+</group>
