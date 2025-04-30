@@ -1,11 +1,11 @@
 <group name="Peaklight, malware,">
   <!-- Stage 1: LNK file and initial PowerShell commands -->
   <rule id="100601" level="12">
-    <if_sid>92213</if_sid>
-    <field name="win.eventdata.TargetFilename" type="pcre2">(?i)C:\\\\Users\\\\[^\\\\]+\\\\AppData\\\\Local\\\\Temp\\\\__PSScriptPolicyTest_[a-z0-9]{8}\.[a-z0-9]{3}\.ps1</field>
-    <description>Possible Peaklight malware activity detected: A rogue executable was dropped in the temp directory.</description>
+    <if_sid>100601</if_sid>
+    <field name="syscheck.content_changes" type="pcre2">(?i)(http|cdn|download|aes|encrypt|bypass|hiddenwindow)</field>
+    <description>Peaklight malware activity detected: Suspicious content in PowerShell temp file.</description>
     <mitre>
-        <id>T1059.001</id>
+      <id>T1059.001</id>
     </mitre>
   </rule>
 
