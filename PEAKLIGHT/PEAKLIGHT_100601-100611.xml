@@ -1,169 +1,58 @@
 <group name="Peaklight, malware,">
-  <!-- Stage 1: LNK file and initial PowerShell commands -->
+
+
+<!-- Rogue file detection in temp folder -->
+
   <rule id="100601" level="12">
-    <if_sid>100601</if_sid>
-    <field name="syscheck.content_changes" type="pcre2">(?i)(http|cdn|download|aes|encrypt|bypass|hiddenwindow)</field>
-    <description>Peaklight malware activity detected: Suspicious content in PowerShell temp file.</description>
-    <mitre>
-      <id>T1059.001</id>
-    </mitre>
-  </rule>
-
-  <!-- LNK Execution with forfiles.exe -->
-  <rule id="100612" level="12">
-    <if_group>windows</if_group>
-    <field name="win.eventdata.CommandLine" type="pcre2">(?i)forfiles\.exe\s+\/p\s+C:\\Windows\s+\/m\s+win\.ini\s+\/c\s+[\"']powershell.*mshta\s+https?:\/\/.*cdn</field>
-    <description>Peaklight malware activity detected: Suspicious LNK execution with forfiles.exe</description>
-    <mitre>
-        <id>T1059.001</id>
-        <id>T1218.005</id>
-    </mitre>
-  </rule>
-
-  <!-- LNK Execution with wildcard registry access -->
-  <rule id="100613" level="12">
-    <if_group>windows</if_group>
-    <field name="win.eventdata.CommandLine" type="pcre2">(?i)powershell.*gp\s+-pa\s+'HKLM:\\SOF\*\\Clas\*\\Applications\\msh\*e'.*cdn</field>
-    <description>Peaklight malware activity detected: Suspicious LNK execution with wildcarded registry access</description>
-    <mitre>
-        <id>T1059.001</id>
-        <id>T1218.005</id>
-    </mitre>
-  </rule>
-
-  <!-- Stage 2: MSHTA execution downloading content from CDN -->
-  <rule id="100614" level="12">
-    <if_group>windows</if_group>
-    <field name="win.eventdata.Image" type="pcre2">(?i).*\\mshta\.exe</field>
-    <field name="win.eventdata.CommandLine" type="pcre2">(?i)https?:\/\/[^\/]*\.b-cdn\.net</field>
-    <description>Peaklight malware activity detected: MSHTA downloading content from Bunny CDN</description>
-    <mitre>
-        <id>T1218.005</id>
-    </mitre>
-  </rule>
-
-  <!-- Stage 3: PowerShell Downloader - AES encrypted execution -->
-  <rule id="100615" level="12">
-    <if_group>windows</if_group>
-    <field name="win.eventdata.Image" type="pcre2">(?i).*\\powershell\.exe</field>
-    <field name="win.eventdata.CommandLine" type="pcre2">(?i).*-w\s+1.*-ep\s+Unrestricted.*-nop.*AES</field>
-    <description>Peaklight malware activity detected: PowerShell hidden execution with AES decryption</description>
-    <mitre>
-        <id>T1059.001</id>
-        <id>T1027</id>
-    </mitre>
-  </rule>
-
-  <!-- Download of L1.zip or L2.zip or K1.zip or K2.zip files -->
-  <rule id="100616" level="12">
     <if_sid>92213</if_sid>
-    <field name="win.eventdata.TargetFilename" type="pcre2">(?i)\\AppData\\(Roaming|Local)\\[LK][12]\.zip$</field>
-    <description>Peaklight malware activity detected: Downloading characteristic payload archives</description>
+    <field name="win.eventdata.Image" type="pcre2">.*\\powershell\.exe</field>
+    <field name="win.eventdata.TargetFilename" type="pcre2">(?i)C:\\\\Users\\\\[^\\\\]+\\\\AppData\\\\Local\\\\Temp\\\\__PSScriptPolicyTest_[a-z0-9]{8}\.[a-z0-9]{3}\.ps1</field>
+    <description>Possible Peaklight malware activity detected: A rogue executable was dropped in the temp directory.</description>
     <mitre>
         <id>T1059.001</id>
     </mitre>
   </rule>
 
-  <!-- Stage 4: Detection of final payloads -->
-  <!-- SHADOWLADDER specific files -->
-  <rule id="100617" level="14">
-    <if_sid>92213</if_sid>
-    <field name="win.eventdata.TargetFilename" type="pcre2">(?i)(bentonite\.cfg|cymophane\.doc|toughie\.txt|LiteSkinUtils\.dll|WCLDll\.dll)$</field>
-    <description>Peaklight malware activity detected: SHADOWLADDER components</description>
-    <mitre>
-        <id>T1204.002</id>
-    </mitre>
-  </rule>
+<!-- Registry Modifications -->
 
-  <!-- CRYPTBOT/LUMMAC specific files -->
-  <rule id="100618" level="14">
-    <if_sid>92213</if_sid>
-    <field name="win.eventdata.TargetFilename" type="pcre2">(?i)(WebView2Loader\.dll|oqnhustu|erefgojgbu)$</field>
-    <description>Peaklight malware activity detected: CRYPTBOT/LUMMAC components</description>
-    <mitre>
-        <id>T1204.002</id>
-    </mitre>
-  </rule>
-
-  <!-- Network connections to known CDNs -->
-  <rule id="100619" level="12">
-    <if_group>windows</if_group>
-    <field name="win.eventdata.CommandLine" type="pcre2">(?i)(potexo|fatodex|matodown|nextomax)\.b-cdn\.net</field>
-    <description>Peaklight malware activity detected: Connection to known malicious CDN</description>
-    <mitre>
-        <id>T1071.001</id>
-    </mitre>
-  </rule>
-
-  <!-- PEAKLIGHT specific memory patterns -->
-  <rule id="100620" level="12">
-    <if_group>windows</if_group>
-    <field name="win.eventdata.CommandLine" type="pcre2">(?i)powershell.*System\.IO\.Compression\.FileSystem.*\.zip</field>
-    <description>Peaklight malware activity detected: PowerShell ZIP archive handling</description>
-    <mitre>
-        <id>T1059.001</id>
-    </mitre>
-  </rule>
-
-  <!-- AutoIt3 dropper detection -->
-  <rule id="100621" level="12">
-    <if_sid>92213</if_sid>
-    <field name="win.eventdata.TargetFilename" type="pcre2">(?i)\\AppData\\Local\\Temp\\.*\.au3$</field>
-    <description>Peaklight malware activity detected: AutoIt3 script dropped</description>
-    <mitre>
-        <id>T1059.005</id>
-    </mitre>
-  </rule>
-
-  <!-- Registry Modifications -->
   <rule id="100602" level="8">
     <if_sid>61615</if_sid>
+    <field name="win.eventdata.Image" type="pcre2">(?i)C:\\\\Program Files\\\\WindowsApps\\\\Microsoft\.WindowsTerminal_.*\\\\WindowsTerminal\.exe</field>
     <field name="win.eventdata.TargetObject" type="pcre2">(?i)HKLM\\\\System\\\\CurrentControlSet\\\\Services\\\\bam\\\\State\\\\UserSettings\\\\S-1-5-21-[0-9]+-[0-9]+-[0-9]+-[0-9]+\\\\Microsoft\.WindowsTerminal_.*</field>
-    <description>Suspicious modification to BAM service registry keys, indicating potential persistence mechanism.</description>
+    <description>Suspicious use of WindowsTerminal.exe to modify BAM service registry keys, indicating potential persistence mechanism. </description>
     <mitre>
         <id>T1543.003</id> 
     </mitre>
   </rule>
 
-  <!-- DLL process injection -->
+<!-- DLL process injection -->
   <rule id="100603" level="12">
     <if_sid>61609</if_sid>
-    <field name="win.eventdata.Image" type="pcre2">(?i).*\\(powershell|PowerShell_ISE)\.exe</field>
+    <field name="win.eventdata.Image" type="pcre2">.*\\powershell\.exe</field>
     <field name="win.eventdata.ImageLoaded" type="pcre2">(?i)[c-z]:\\\\Windows\\\\assembly\\\\NativeImages_v4\.0\.30319_64\\\\mscorlib\\\\.*\\\\mscorlib\.ni\.dll</field>
     <description>Possible Peaklight malware activity detected: PowerShell process loaded mscorlib.ni.dll, possibly indicating process injection.</description>
     <mitre>
         <id>T1055</id>
     </mitre>
   </rule>
-  
+
   <rule id="100604" level="12">
     <if_sid>61609</if_sid>
-    <field name="win.eventdata.Image" type="pcre2">(?i).*\\(powershell|PowerShell_ISE)\.exe</field>
+    <field name="win.eventdata.Image" type="pcre2">.*\\powershell\.exe</field>
     <field name="win.eventdata.ImageLoaded" type="pcre2">(?i)[c-z]:\\\\Windows\\\\Microsoft\.NET\\\\Framework64\\\\v4\.0\.30319\\\\clrjit\.dll</field>
     <description>Possible Peaklight malware activity detected: PowerShell process loaded clrjit.dll, indicating potential process injection.</description>
     <mitre>
         <id>T1055.001</id>
     </mitre>
   </rule>
-  
+
   <rule id="100605" level="12">
     <if_sid>61609</if_sid>
-    <field name="win.eventdata.Image" type="pcre2">(?i).*\\(powershell|PowerShell_ISE)\.exe</field>
+    <field name="win.eventdata.Image" type="pcre2">.*\\powershell\.exe</field>
     <field name="win.eventdata.ImageLoaded" type="pcre2">(?i)[c-z]:\\\\Windows\\\\Microsoft\.NET\\\\Framework64\\\\v4\.0\.30319\\\\mscoreei\.dll</field>
     <description>Possible Peaklight malware activity detected: PowerShell process loaded mscoreei.dll, indicating potential process injection.</description>
     <mitre>
         <id>T1055.001</id>
-    </mitre>
-  </rule>
-
-  <!-- LOLBin detection rules from previous set -->
-  <rule id="100611" level="12">
-    <if_sid>61609</if_sid>
-    <field name="win.eventdata.Image" type="pcre2">(?i).*\\(cmd|wmic|mshta|cscript|wscript|regsvr32|rundll32|certutil|bitsadmin|forfiles)\.exe</field>
-    <field name="win.eventdata.ImageLoaded" type="pcre2">(?i)[c-z]:\\\\Windows\\\\(Microsoft\.NET|assembly)\\\\.*\\.(dll|ni\.dll)$</field>
-    <description>Possible Peaklight malware activity detected: $(win.eventdata.Image) loaded .NET DLL, indicating potential process injection.</description>
-    <mitre>
-        <id>T1055</id>
     </mitre>
   </rule>
 </group>
