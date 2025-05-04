@@ -1,0 +1,36 @@
+<group name="windows,sysmon,">
+  
+  <!-- Rule to detect consent.exe loading DLLs -->
+  <rule id="100200" level="3">
+    <if_group>sysmon_event7</if_group>
+    <field name="win.eventdata.image">consent.exe</field>
+    <description>Windows UAC consent.exe loaded a DLL: $(win.eventdata.imageLoaded)</description>
+  </rule>
+
+  <!-- Rule to detect elevated process launches -->
+  <rule id="100201" level="3">
+    <if_group>sysmon_event1</if_group>
+    <field name="win.eventdata.integrityLevel">High</field>
+    <description>Process launched with elevated privileges: $(win.eventdata.image)</description>
+  </rule>
+
+  <!-- More specific rule for consent.exe loading AMSI -->
+  <rule id="100202" level="3">
+    <if_sid>100200</if_sid>
+    <field name="win.eventdata.imageLoaded">amsi.dll</field>
+    <description>UAC consent.exe loaded AMSI.dll (PowerShell security component)</description>
+  </rule>
+
+  <!-- Higher severity correlation when AMSI is involved -->
+  <rule id="100203" level="15" timeframe="15">
+    <if_matched_sid>100202</if_matched_sid>
+    <if_sid>100201</if_sid>
+    <description>Sysmon - Event 7: Execution with elevated privileges $(win.eventdata.image)</description>
+    <mitre>
+      <id>T1548.002</id>
+      <id>T1059.001</id>
+    </mitre>
+    <group>privilege_escalation,powershell,</group>
+  </rule>
+
+</group>
