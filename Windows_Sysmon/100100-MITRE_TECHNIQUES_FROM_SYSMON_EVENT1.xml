@@ -988,7 +988,7 @@
   <!-- Sysmon Event 1 Non Interactive Powershell -->
 <rule id="100503" level="10">
 <if_sid>100100</if_sid>
-<field name="win.eventdata.image">powershell.exe$|pwsh.exe$</field>
+<field name="win.eventdata.image">powershell.exe$|pwsh.exe$|powershell_ise.exe$</field>
 <field name="win.eventdata.parentImage" negate="yes">cmd.exe$|explorer.exe$|wazuh-agent.exe$</field>
 <description>Sysmon - Event 1: Non Interactive PowerShell Execution detected.</description>
 <mitre>
